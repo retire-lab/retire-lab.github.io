@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-Hant-TW" data-etf="soon" data-lump="soon">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>退休實驗室 retire-lab｜幾歲可以退休、那天需要多少錢、怎麼領才不會領光</title>
+<meta name="description" content="免費、開源、不用註冊的退休決策工具：用台灣的制度數字算出最早幾歲可以退休、退休那天需要多少錢，再用真實歷史資料測試怎麼領才不會領光。">
+<meta property="og:title" content="退休實驗室 retire-lab">
+<meta property="og:description" content="退休前，先算清楚三件事：幾歲可以退休、那天需要多少錢、怎麼領才不會領光。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://retire-lab.github.io/">
+<meta name="theme-color" content="#F3F5F3">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Crect x='1' y='1' width='28' height='28' rx='7' fill='%23fff' stroke='%2315201C' stroke-width='2'/%3E%3Cpath d='M7 21 L13 15 L17 18 L23 9' fill='none' stroke='%231F6B52' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0}
+:root{--accent:#1F6B52}
+/* 上線開關：改 <html> 的 data-etf / data-lump 即可，不用動其他地方 */
+.etf-ready,.etf-soon{display:contents}
+[data-etf="soon"] .etf-ready,[data-etf="ready"] .etf-soon{display:none}
+[data-lump="ready"] .lump-soon{display:none}
+a:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:6px}
+a{color:#1F5C47}a:hover{color:#123B2D}
+@keyframes rlUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes rlGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes rlPop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+@keyframes rlPing{from{opacity:.55;transform:scale(1)}to{opacity:0;transform:scale(2.8)}}
+.rl-in{animation:rlUp .6s ease-out both}
+.rl-d1{animation-delay:.12s}
+.rl-d2{animation-delay:.24s}
+.rl-bar{transform-origin:left center;animation:rlGrow .8s cubic-bezier(.2,.7,.2,1) .35s both}
+.rl-bar2{animation-duration:1.4s;animation-delay:1.2s}
+.rl-dot{animation:rlPop .35s cubic-bezier(.3,1.6,.5,1) 1.1s both}
+.rl-ping{animation:rlPing 1.1s ease-out 1.5s 2 both}
+@supports (animation-timeline: view()){
+  .rl-reveal{animation:rlUp linear both;animation-timeline:view();animation-range:entry 0% entry 35%}
+}
+.rl-lift{transition:transform .2s ease,box-shadow .2s ease}
+.rl-lift:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(21,32,28,.08)}
+@media (prefers-reduced-motion: reduce){
+  .rl-in,.rl-bar,.rl-dot,.rl-ping,.rl-reveal{animation:none!important}
+  .rl-lift,.rl-lift:hover{transition:none;transform:none}
+}
+</style>
+</head>
+<body>
+<div style="font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif; color: #15201C; background: #F3F5F3; min-height: 100vh">
+
+  <header style="background: #F3F5F3; border-bottom: 1px solid #DDE3DF">
+    <nav style="max-width: 1120px; margin: 0 auto; padding: 18px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+      <a href="#top" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #15201C">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true"><rect x="1" y="1" width="28" height="28" rx="7" stroke="#15201C" stroke-width="2"></rect><path d="M7 21 L13 15 L17 18 L23 9" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        <span style="font-weight: 900; font-size: 19px; letter-spacing: 0.02em">退休實驗室</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #56635D">retire-lab</span>
+      </a>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px; font-size: 15px">
+        <a href="#tools" style="padding: 10px 12px; text-decoration: none; color: #34413B">兩個工具</a>
+        <a href="#scope" style="padding: 10px 12px; text-decoration: none; color: #34413B">做什麼、不做什麼</a>
+        <a href="https://github.com/retire-lab" style="padding: 10px 12px; text-decoration: none; color: #34413B">GitHub</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+  <!-- 主視覺：三個問題 + 一條時間線 -->
+  <section id="top" style="max-width: 1120px; margin: 0 auto; padding: 72px 24px 64px; display: flex; flex-direction: column; gap: 48px">
+    <div class="rl-in" style="display: flex; flex-direction: column; gap: 22px; max-width: 760px">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; letter-spacing: 0.08em; color: var(--accent); font-weight: 600">免費・開源・不用註冊</div>
+      <h1 style="margin: 0; font-size: clamp(36px, 5vw, 56px); line-height: 1.18; font-weight: 900; letter-spacing: -0.01em">退休前，先算清楚三件事。</h1>
+      <p style="margin: 0; font-size: 18px; line-height: 1.75; color: #3D4A44">幾歲可以退休？退休那天需要多少錢？拿到之後怎麼領，才不會領光？用台灣的制度數字和真實的歷史資料算，不賣任何商品。</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; padding-top: 6px">
+        <a href="/retirement/" style="display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 26px; border-radius: 10px; background: var(--accent); color: #FFFFFF; text-decoration: none; font-weight: 700; font-size: 17px">從第一步開始
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+        </a>
+        <a href="#start" style="display: inline-flex; align-items: center; min-height: 52px; padding: 0 22px; border-radius: 10px; border: 1.5px solid #B9C4BE; color: #15201C; text-decoration: none; font-weight: 500; font-size: 17px">已經有一筆錢了？</a>
+      </div>
+    </div>
+
+    <figure class="rl-in rl-d2" aria-label="示意：從今天到退休那天，再一路領到 90 歲" style="margin: 0; background: #FFFFFF; border: 1px solid #DDE3DF; border-radius: 16px; padding: 28px 28px 24px; display: flex; flex-direction: column; gap: 20px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap">
+        <span style="font-size: 15px; color: #56635D">一條退休時間線</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #6B7771">示意</span>
+      </div>
+
+      <div style="position: relative; display: flex; gap: 6px; height: 14px">
+        <div class="rl-bar" style="flex: 12 1 0; background: var(--accent); border-radius: 7px 2px 2px 7px"></div>
+        <div class="rl-bar rl-bar2" style="flex: 32 1 0; background: #D9A26E; border-radius: 2px 7px 7px 2px"></div>
+        <span aria-hidden="true" class="rl-ping" style="position: absolute; left: calc((100% - 6px) * 12 / 44 + 3px); top: -4px; margin-left: -11px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent)"></span>
+        <span aria-hidden="true" class="rl-dot" style="position: absolute; left: calc((100% - 6px) * 12 / 44 + 3px); top: -4px; margin-left: -11px; width: 22px; height: 22px; border-radius: 50%; background: #FFFFFF; border: 5px solid #15201C; box-sizing: border-box"></span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 14px; color: #56635D">今天</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 32px; font-weight: 600; line-height: 1.1">46<span style="font-family: 'Noto Sans TC', sans-serif; font-size: 16px; font-weight: 700; padding-left: 4px">歲</span></span>
+          <span style="font-size: 15px; line-height: 1.6; color: #3D4A44">照現在的收入和支出存錢，加上勞保、勞退</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 14px; color: #56635D">退休那天</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 32px; font-weight: 600; line-height: 1.1">58<span style="font-family: 'Noto Sans TC', sans-serif; font-size: 16px; font-weight: 700; padding-left: 4px">歲</span></span>
+          <span style="font-size: 15px; line-height: 1.6; color: #3D4A44">那天手上需要 <b style="font-family: 'IBM Plex Mono', monospace; color: #15201C">1,200</b> 萬（今天的購買力）</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 14px; color: #56635D">一路領到</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 32px; font-weight: 600; line-height: 1.1">90<span style="font-family: 'Noto Sans TC', sans-serif; font-size: 16px; font-weight: 700; padding-left: 4px">歲</span></span>
+          <span style="font-size: 15px; line-height: 1.6; color: #3D4A44">每月從這筆錢拿生活費，看會不會中途領光</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: #56635D; border-top: 1px solid #E6EBE8; padding-top: 16px">
+        <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: var(--accent)"></span>退休試算算這一段</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #D9A26E"></span>ETF 壓力測試算這一段</span>
+      </div>
+    </figure>
+  </section>
+
+  <!-- 兩個工具 -->
+  <section id="tools" style="background: #FFFFFF; border-top: 1px solid #DDE3DF; border-bottom: 1px solid #DDE3DF">
+    <div style="max-width: 1120px; margin: 0 auto; padding: 72px 24px; display: flex; flex-direction: column; gap: 40px">
+      <div style="display: flex; flex-direction: column; gap: 10px; max-width: 40em">
+        <h2 style="margin: 0; font-size: 32px; font-weight: 900">三個問題，兩個工具</h2>
+        <p style="margin: 0; font-size: 17px; line-height: 1.75; color: #3D4A44">先用最保守的假設找出底線，再看投資能改變多少。第一步算出的「那天需要多少錢」，可以直接帶到第二步。</p>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+
+        <article class="rl-reveal" style="flex: 1 1 420px; min-width: 0; border: 1px solid #DDE3DF; border-radius: 16px; padding: 32px 30px; display: flex; flex-direction: column; gap: 20px; background: #F8FAF8">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; color: var(--accent); letter-spacing: 0.06em">STEP 01・不算投資</span>
+            <span style="font-size: 13px; padding: 4px 10px; border-radius: 999px; background: #E3EEE8; color: #1F5C47; font-weight: 500">已上線</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 14px; color: #56635D">回答問題一、二</span>
+            <h3 style="margin: 0; font-size: 26px; line-height: 1.35; font-weight: 900">最早幾歲可以退休？<br>那天需要多少錢？</h3>
+          </div>
+          <p style="margin: 0; font-size: 16px; line-height: 1.75; color: #3D4A44">填幾個現在就知道的數字。只算收入減支出存下來的錢，加上勞保、勞退，錢都放銀行定存，不算任何投資報酬。</p>
+          <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 15px; color: #26322D">
+            <li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 3px"><path d="M5 12l5 5L20 7"></path></svg><span>最早幾歲幾個月可以退休</span></li>
+            <li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 3px"><path d="M5 12l5 5L20 7"></path></svg><span>想在某個年齡退休，那天手上要有多少</span></li>
+            <li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 3px"><path d="M5 12l5 5L20 7"></path></svg><span>想提早一年，每月要多存或少花多少</span></li>
+            <li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 3px"><path d="M5 12l5 5L20 7"></path></svg>
+              <span>勞保幾歲領、一次領還是月領，兩條線並排比
+                <span class="lump-soon"><span style="font-size: 12px; padding: 2px 8px; margin-left: 6px; border-radius: 999px; background: #EEF1EF; color: #56635D; white-space: nowrap">即將加入</span></span>
+              </span>
+            </li>
+          </ul>
+          <div style="flex-grow: 1"></div>
+          <a href="/retirement/" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 24px; border-radius: 10px; background: var(--accent); color: #FFFFFF; text-decoration: none; font-weight: 700; font-size: 17px">開始試算
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+          </a>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #6B7771; text-align: center">retire-lab.github.io/retirement</div>
+        </article>
+
+        <div aria-hidden="true" style="flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 4px 2px; min-width: 72px; margin: 0 auto">
+          <span style="font-size: 13px; color: #56635D; text-align: center; line-height: 1.5">那天需要<br>的錢<br>帶過去</span>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#56635D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"></path></svg>
+        </div>
+
+        <article class="rl-reveal" style="flex: 1 1 420px; min-width: 0; border: 1px solid #DDE3DF; border-radius: 16px; padding: 32px 30px; display: flex; flex-direction: column; gap: 20px; background: #F8FAF8">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; color: #9A5317; letter-spacing: 0.06em">STEP 02・加上投資</span>
+            <div class="etf-ready">
+              <span style="font-size: 13px; padding: 4px 10px; border-radius: 999px; background: #E3EEE8; color: #1F5C47; font-weight: 500">已上線</span>
+            </div>
+            <div class="etf-soon">
+              <span style="font-size: 13px; padding: 4px 10px; border-radius: 999px; background: #F6E8D9; color: #7A4210; font-weight: 500">準備中</span>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 14px; color: #56635D">回答問題三</span>
+            <h3 style="margin: 0; font-size: 26px; line-height: 1.35; font-weight: 900">拿到這筆錢，<br>怎麼領才不會領光？</h3>
+          </div>
+          <p style="margin: 0; font-size: 16px; line-height: 1.75; color: #3D4A44">照你的提領計畫每月領錢，用真實歷史跑一遍<b style="color: #15201C">美股</b>收益型 ETF 的配置。看的是現金流撐不撐得住，不是報酬率多高。</p>
+          <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 15px; color: #26322D">
+            <li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A5317" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 3px"><path d="M5 12l5 5L20 7"></path></svg><span>歷史上哪種配置最不容易領光</span></li>
+            <li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A5317" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 3px"><path d="M5 12l5 5L20 7"></path></svg><span>自己的配置，和全範圍對照組比一比</span></li>
+            <li style="display: flex; gap: 10px; align-items: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A5317" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 3px"><path d="M5 12l5 5L20 7"></path></svg><span>投資能不能讓你更早退休</span></li>
+          </ul>
+          <div style="font-size: 14px; line-height: 1.7; color: #3D4A44; background: #FFFFFF; border: 1px solid #E6EBE8; border-radius: 10px; padding: 12px 14px">第一步算出來已經夠了？那就不一定要投資。投資是選項，不是必要。</div>
+          <div style="flex-grow: 1"></div>
+          <div class="etf-ready">
+            <a href="/etf/" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 24px; border-radius: 10px; background: #15201C; color: #FFFFFF; text-decoration: none; font-weight: 700; font-size: 17px">開始壓力測試
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            </a>
+          </div>
+          <div class="etf-soon">
+            <div style="display: flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 24px; border-radius: 10px; border: 1.5px dashed #B9C4BE; color: #56635D; font-size: 16px; text-align: center">還在搬家，完成後這裡會打開</div>
+          </div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #6B7771; text-align: center">retire-lab.github.io/etf</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 從哪裡開始 -->
+  <section id="start" style="max-width: 1120px; margin: 0 auto; padding: 72px 24px 24px; display: flex; flex-direction: column; gap: 28px">
+    <h2 style="margin: 0; font-size: 32px; font-weight: 900">從哪裡開始？</h2>
+    <div class="rl-reveal" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px">
+      <a class="rl-lift" href="/retirement/" style="display: flex; gap: 18px; align-items: flex-start; padding: 26px 24px; border-radius: 16px; background: #FFFFFF; border: 1px solid #DDE3DF; text-decoration: none; color: #15201C">
+        <span style="flex: none; width: 44px; height: 44px; border-radius: 12px; background: #E3EEE8; display: flex; align-items: center; justify-content: center">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+          <span style="font-size: 19px; font-weight: 700">還沒退休，不知道幾歲能退</span>
+          <span style="font-size: 15px; line-height: 1.7; color: #3D4A44">從退休試算開始。算完可以把結果直接帶到 ETF 壓力測試，不用重填。</span>
+          <span style="font-size: 15px; font-weight: 700; color: var(--accent); padding-top: 4px">前往退休試算 →</span>
+        </span>
+      </a>
+      <div class="etf-ready"><a class="rl-lift" href="/etf/" style="display: flex; gap: 18px; align-items: flex-start; padding: 26px 24px; border-radius: 16px; background: #FFFFFF; border: 1px solid #DDE3DF; text-decoration: none; color: #15201C">
+        <span style="flex: none; width: 44px; height: 44px; border-radius: 12px; background: #F6E8D9; display: flex; align-items: center; justify-content: center">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A5317" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M3 10h18M7 15h3"></path></svg>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+          <span style="font-size: 19px; font-weight: 700">已經有一筆錢，退休時間也定了</span>
+          <span style="font-size: 15px; line-height: 1.7; color: #3D4A44">直接到 ETF 壓力測試。快速開始只問四件事，就能看到結果。</span>
+          <span style="font-size: 15px; font-weight: 700; color: #9A5317; padding-top: 4px">前往 ETF 壓力測試 →</span>
+          
+        </span>
+      </a></div>
+      <div class="etf-soon"><div style="display: flex; gap: 18px; align-items: flex-start; padding: 26px 24px; border-radius: 16px; background: #FFFFFF; border: 1px solid #DDE3DF; text-decoration: none; color: #15201C">
+        <span style="flex: none; width: 44px; height: 44px; border-radius: 12px; background: #F6E8D9; display: flex; align-items: center; justify-content: center">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A5317" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M3 10h18M7 15h3"></path></svg>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+          <span style="font-size: 19px; font-weight: 700">已經有一筆錢，退休時間也定了</span>
+          <span style="font-size: 15px; line-height: 1.7; color: #3D4A44">直接到 ETF 壓力測試。快速開始只問四件事，就能看到結果。</span>
+          
+          <span style="font-size: 15px; color: #6B7771; padding-top: 4px">準備中</span>
+        </span>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- 做什麼、不做什麼 -->
+  <section id="scope" style="max-width: 1120px; margin: 0 auto; padding: 64px 24px 72px; display: flex; flex-direction: column; gap: 28px">
+    <div style="display: flex; flex-direction: column; gap: 10px; max-width: 40em">
+      <h2 style="margin: 0; font-size: 32px; font-weight: 900">這裡做什麼、不做什麼</h2>
+      <p style="margin: 0; font-size: 17px; line-height: 1.75; color: #3D4A44">退休實驗室只處理退休決策，不是投資理財網站。先講清楚範圍，你才知道結果能信到哪裡。</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px">
+      <div class="rl-reveal" style="background: #FFFFFF; border: 1px solid #DDE3DF; border-radius: 16px; padding: 28px 26px; display: flex; flex-direction: column; gap: 16px">
+        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: var(--accent)">做</h3>
+        <div style="display: flex; flex-direction: column; gap: 14px; font-size: 15px; line-height: 1.7; color: #26322D">
+          <span>幾歲可以退休，精確到月</span>
+          <span>退休那天需要多少錢（今天的購買力）</span>
+          <span>拿到這筆錢，怎麼領在歷史上最撐得住</span>
+          <span>勞保、勞退、國保、健保，照現行制度算進去</span>
+        </div>
+      </div>
+      <div class="rl-reveal" style="background: #FFFFFF; border: 1px solid #DDE3DF; border-radius: 16px; padding: 28px 26px; display: flex; flex-direction: column; gap: 16px">
+        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #56635D">不做</h3>
+        <div style="display: flex; flex-direction: column; gap: 14px; font-size: 15px; line-height: 1.7; color: #26322D">
+          <span><b>不推薦商品，也不給投資建議。</b>歷史壓力測試告訴你過去會怎樣，不是預測未來。</span>
+          <span><b>不算退休前怎麼投資。</b>第一步給你「那天需要多少錢」這個目標，怎麼存到是你自己的路。</span>
+          <span><b>不合算夫妻。</b>只算你自己負擔的那一份，假設配偶繼續負擔他的家用份額。</span>
+          <span><b>ETF 只有美股。</b>台股 ETF 不在範圍內。</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 原則 -->
+  <section id="principles" style="background: #FFFFFF; border-top: 1px solid #DDE3DF">
+    <div style="max-width: 1120px; margin: 0 auto; padding: 64px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 28px">
+      <div class="rl-reveal" style="display: flex; flex-direction: column; gap: 10px">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#15201C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"></rect><path d="M10 18h4"></path></svg>
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700">資料只在你的裝置上</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.75; color: #3D4A44">沒有帳號、沒有伺服器。你填的數字只存在自己的瀏覽器，換裝置用匯出、匯入。</p>
+      </div>
+      <div class="rl-reveal" style="display: flex; flex-direction: column; gap: 10px">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#15201C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"></path><path d="M14 3v5h5M10 13h6M10 17h6"></path></svg>
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700">每個數字都有出處</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.75; color: #3D4A44">制度參數來自官方公告，附來源與取得日期；關鍵公式用官方試算器實測驗證。</p>
+      </div>
+      <div class="rl-reveal" style="display: flex; flex-direction: column; gap: 10px">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#15201C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"></path></svg>
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700">寧可保守</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.75; color: #3D4A44">預設值偏向保守，通膨沒有低於 2% 的選項，不讓結果看起來比實際好。</p>
+      </div>
+      <div class="rl-reveal" style="display: flex; flex-direction: column; gap: 10px">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#15201C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 8l-5 4 5 4M16 8l5 4-5 4M14 5l-4 14"></path></svg>
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700">程式碼公開</h3>
+        <p style="margin: 0; font-size: 15px; line-height: 1.75; color: #3D4A44">計算邏輯和測試全部放在 GitHub，誰都可以檢查。</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+  <footer style="background: #15201C; color: #C9D2CD">
+    <div style="max-width: 1120px; margin: 0 auto; padding: 40px 24px; display: flex; flex-wrap: wrap; gap: 24px; justify-content: space-between; align-items: flex-start">
+      <div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 360px; min-width: 0">
+        <span style="font-weight: 900; font-size: 17px; color: #FFFFFF">退休實驗室 retire-lab</span>
+        <span style="font-size: 14px; line-height: 1.75">計算結果僅供參考，不構成財務、稅務或投資建議。重大決定前，請和專業人士討論。</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px; font-size: 14px">
+        <a href="/retirement/" style="padding: 10px 12px; color: #E6ECE8">退休試算</a>
+        <div class="etf-ready"><a href="/etf/" style="padding: 10px 12px; color: #E6ECE8">ETF 壓力測試</a></div>
+        <a href="https://github.com/retire-lab" style="padding: 10px 12px; color: #E6ECE8">GitHub</a>
+        <span style="padding: 10px 12px">[聯絡方式]</span>
+      </div>
+    </div>
+  </footer>
+</div>
+</body>
+</html>
